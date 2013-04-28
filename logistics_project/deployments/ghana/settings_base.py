@@ -73,6 +73,11 @@ INSTALLED_BACKENDS = {
 #        "params_outgoing": "user=my_username&snr=%2B&password=my_password&id=%(phone_number)s&text=%(message)s",
 #        "params_incoming": "snr=%(phone_number)s&msg=%(message)s"
 #    },
+    
+    "migration": {"ENGINE": "logistics_project.apps.migration.backends.migration",
+    },
+
+
     "smsgh": {
         "ENGINE": "logistics_project.backends.smsgh_http",
         "PORT": 8002,
@@ -82,6 +87,7 @@ INSTALLED_BACKENDS = {
         "params_outgoing": "user=my_username&snr=%2B&password=my_password&id=%(phone_number)s&text=%(message)s&from=%(from)s",
         "params_incoming": "snr=%(phone_number)s&msg=%(message)s"
     },
+
     "message_tester": {
         "ENGINE": "rapidsms.backends.bucket",
     },
@@ -93,7 +99,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "logistics",
         "USER": "postgres",
-        "PASSWORD": "test",
+        "PASSWORD": "postgres123",
         "HOST": "localhost",
     }
 }
