@@ -12,7 +12,7 @@ VERSION = '0.2.1' # This doesn't do anything yet, but what the hey.
 BASE_APPS = [
 
     # the essentials.
-    "django_nose",
+
     "djtables",
     "rapidsms",
     # for email reports
@@ -34,6 +34,7 @@ BASE_APPS = [
     "django.contrib.contenttypes",
     
     "south",
+    "django_nose",
     
     # the rapidsms contrib apps.
     #"rapidsms.contrib.default",
@@ -47,10 +48,12 @@ BASE_APPS = [
     "logistics_project.apps.web_registration",
     "logistics",
     "logistics_project.apps.maps",
+    "logistics_project.apps.migration",
     "email_reports",
 #    "logistics_project.apps.reports",
 #    "logistics_project.apps.groupmessaging",
     #"django_cpserver", # pip install django-cpserver
+    "couchlog",
     "registration",
     "groupmessaging",
     "taggit"
@@ -104,7 +107,6 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     "logistics.context_processors.custom_settings",
     "logistics.context_processors.google_analytics",
     "logistics.context_processors.stocked_by",
-    "logistics.context_processors.global_nav_mode",
     "couchlog.context_processors.static_workaround"
 ]
 
@@ -145,7 +147,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "logistics",
         "USER": "postgres",
-        "PASSWORD": "",
+        "PASSWORD": "postgres",
         "HOST": "localhost",
     }
 }
@@ -181,15 +183,15 @@ STATIC_ROOT = "/static_root"
 STATIC_URL = "/static"
 
 # email settings used for sending out email reports
-EMAIL_LOGIN="name@dimagi.com"
-EMAIL_PASSWORD="changeme"
+EMAIL_LOGIN="ewstesthenok@gmail.com"
+EMAIL_PASSWORD="ikjtsctvczlueqzx"
 EMAIL_SMTP_HOST="smtp.gmail.com"
 EMAIL_SMTP_PORT=587
 ACCOUNT_ACTIVATION_DAYS=30
 
 EMAIL_HOST='smtp.gmail.com'
-EMAIL_HOST_PASSWORD='changeme'
-EMAIL_HOST_USER='name@dimagi.com'
+EMAIL_HOST_PASSWORD='ikjtsctvczlueqzx'
+EMAIL_HOST_USER='ewstesthenok@gmail.com'
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
 
@@ -219,6 +221,8 @@ MAP_DEFAULT_LATITUDE  = -10.49
 MAP_DEFAULT_LONGITUDE = 39.35
 
 DEBUG=False
+
+COUNTRY = 'ghana'
 
 RAPIDSMS_HANDLERS_EXCLUDE_APPS = ["couchlog"]
 
