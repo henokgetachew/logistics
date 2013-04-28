@@ -4,6 +4,12 @@ from rapidsms.conf import settings
 from rapidsms.contrib.locations.models import Location
 from logistics import loader as logistics_loader
 from logistics.util import config
+import os
+from rapidsms.contrib.locations.models import LocationType, Location, Point
+from dimagi.utils.parsing import string_to_boolean
+from logistics.shortcuts import supply_point_from_location
+from logistics.models import SupplyPoint, SupplyPointType, SupplyPointGroup
+
 
 class LoaderException(Exception):
     pass
@@ -69,6 +75,7 @@ def AddFacilities(filename):
         facility_code = _generate_code(facility_name)
         facility_type_name = row[4].strip()
         try:
+
             facility_type = SupplyPointType.objects.get(name__iexact=facility_type_name)
         except SupplyPointType.DoesNotExist:
             print "ERROR: SupplyPoint type for %s not found" % facility_type_name
@@ -165,7 +172,8 @@ def LoadFacilities(filename):
         code = _generate_code(name)
         type = row[4]
         try:
-            facilitytype = SupplyPointType.objects.get(name__icontains=type)
+
+	    facilitytype = SupplyPointType.objects.get(name__icontains=type)
         except SupplyPointType.DoesNotExist:
             print "ERROR: SupplyPoint type for %s not found" % type
             errors = errors + 1
@@ -381,4 +389,100 @@ def _generate_district_code(district_name):
 
 def _generate_region_code(region_name):
     return region_name.lower().replace(' ','_')
+
+def _get_code(type, name):
+    def clean(string):
+        for char in " /\+_":
+            string = string.replace(char, "-")
+        return string 
+    return "%s-%s" % (clean(type), clean(name))
+
+def load_locations(file):
+    count = 0
+    messages = []
+    reader = csv.reader(file, delimiter=',', quotechar='"')
+    for row in reader:
+        #name, is_active, msd_code, parent_name, parent_type, lat, lon, group, type = row[:9]
+
+        rowID, name, is_active, msd_code, parent_name, parent_type, lat, lon, type = row[:9]
+
+	name = name.strip()
+        if parent_name:
+            parent_name = parent_name.strip()
+
+        # strips off headers, if present
+        if count == 0 and "msd code" == msd_code.lower():
+            continue
+
+        # for now assumes these are already created
+        try: 
+            loc_type = LocationType.objects.get(name__iexact=type)
+        except LocationType.DoesNotExist:
+            messages.append("Couldn't find type %s (row was ignored)" % (type))
+            continue
+
+        try:
+            parent = Location.objects.get(name__iexact=parent_name,
+                                          type__name__iexact=parent_type) \
+                            if parent_name and parent_type else None
+
+        except:
+            messages.append("Couldn't find parent %s %s (row was ignored)" % (parent_name, parent_type))
+            continue
+
+        if lat and lon:
+            if Point.objects.filter(longitude=lon, latitude=lat).exists():
+                point = Point.objects.filter(longitude=lon, latitude=lat)[0]
+            else:
+                point = Point.objects.create(longitude=lon, latitude=lat)
+        else:
+            point = None
+        
+        code = msd_code if msd_code else _get_code(type, name)
+        try:
+            l = Location.objects.get(code=code)
+        except Location.DoesNotExist:
+            l = Location(code=code)
+        l.name = name
+        l.type = loc_type
+
+        try:
+            #print is_active
+	    l.is_active = string_to_boolean(is_active)
+        except ValueError:
+            messages.append("in location %s, %s is not a valid value for is_active. Use 't' or 'f' (row was ignored)" % (name, is_active))
+            continue
+
+        if parent: l.parent = parent
+        if point:  l.point = point
+
+        l.save()
+	#print type #for debugging purposes
+        
+	if type == "facility":  #added because in the EWS there are no districts and regions as supply point types.
+		sp = supply_point_from_location \
+ 	        (l, random.choice(SupplyPointType.objects.exclude(code='cms')),
+		None) #SupplyPoint.objects.get(location=parent) if parent else None)
+		#(l, SupplyPointType.objects.get(name__iexact= type), #This line commented out and the next one added for EWS.
+        #We don't use group in EWS(?) 
+        #if group:
+        #    group_obj = SupplyPointGroup.objects.get_or_create(code=group)[0]
+        #    sp.groups.add(group_obj)
+        #    sp.save()
+        
+        count += 1
+    messages.append("Processed %d locations"  % count)
+    
+    return messages
+
+        
+def load_locations_from_path(path):
+    print "Loading locations %s"  % (path)
+    if not os.path.exists(path):
+        raise Exception("no file found at %s" % path)
+
+    with open(path, 'r') as f:
+        for msg in load_locations(f):
+            print msg
+        
     
